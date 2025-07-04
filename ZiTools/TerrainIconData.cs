@@ -15,7 +15,8 @@ namespace ZiTools
 
 		public void DrawIcon(Rect outerRect)
 		{
-			Widgets.DefIcon(outerRect, _terrainDef);
+			if (_terrainDef != null)
+				Widgets.DefIcon(outerRect, _terrainDef);
 		}
 	}
 }

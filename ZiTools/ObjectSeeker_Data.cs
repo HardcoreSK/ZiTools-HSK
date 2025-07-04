@@ -81,7 +81,7 @@ namespace ZiTools
 		public void Update()
 		{
 			FindAll();
-			MapMarksManager.SetMarks(MapMarksManager.ObjectSeeker_MarkDef, this.Positions);
+			MapMarksManager.SetMarks(MapMarksManager.ObjectSeeker_MarkDef, Positions);
 			UpdateAction();
 		}
 
@@ -101,11 +101,11 @@ namespace ZiTools
 		public void FindAll()
 		{
 			if (TexturesOfCategoriesDict == null) // NOTE: works only after a loading game
-				this.InitializeTextures();
+				InitializeTextures();
 #if DEBUG
 			Stopwatch sw = Stopwatch.StartNew();
 #endif
-			this._mapInProcess = Find.CurrentMap;
+			_mapInProcess = Find.CurrentMap;
 
 			foreach (var u in unitsDict.Values)
 				u.CleanData();
@@ -127,7 +127,7 @@ namespace ZiTools
 			{
 				if (_mapInProcess.fogGrid.IsFogged(location))
 					continue;
-				this.FillNewDataTerrain(location.GetTerrain(_mapInProcess), location);
+				FillNewDataTerrain(location.GetTerrain(_mapInProcess), location);
 				foreach (Thing currentThing in _mapInProcess.thingGrid.ThingsAt(location))
 				{
 					if (currentThing is Mote)
@@ -161,7 +161,7 @@ namespace ZiTools
 					{
 						CompRottable comp = ((Corpse)thingToLoad).GetComp<CompRottable>();
 						int currentTicksRemain = comp == null ? 0 : Mathf.RoundToInt(comp.PropsRot.TicksToRotStart - comp.RotProgress);
-						this.unitsDict[thingToLoad.def.defName].CheсkAndSetCorpseTime(currentTicksRemain);
+						unitsDict[thingToLoad.def.defName].CheсkAndSetCorpseTime(currentTicksRemain);
 						continue;
 					}
 
@@ -184,13 +184,13 @@ namespace ZiTools
 			CategoriesDict[CategoryOfObjects.Corpses].Sort((u1, u2) => u1.CorpseTime.CompareTo(u2.CorpseTime));
 
 			// Filling parametres
-			foreach (var unit in this.CategoriesDict[CategoryOfObjects.All])
+			foreach (var unit in CategoriesDict[CategoryOfObjects.All])
 				unit.SetPatameter(CategoryOfObjects.All);
-			foreach (var unit in this.CategoriesDict[CategoryOfObjects.Corpses])
+			foreach (var unit in CategoriesDict[CategoryOfObjects.Corpses])
 				unit.SetPatameter(CategoryOfObjects.Corpses);
 
 			// UnitToSeek checking
-			if (UnitToSeek != null && !this.CategoriesDict[CategoryOfObjects.All].Contains(this.UnitToSeek))
+			if (UnitToSeek != null && !CategoriesDict[CategoryOfObjects.All].Contains(UnitToSeek))
 				Clear();
 #if DEBUG
 			sw.Stop();

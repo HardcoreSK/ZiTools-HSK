@@ -25,7 +25,7 @@ namespace ZiTools
 					_isFirtsLaunch = false;
 				Scribe_Values.Look(ref _isFirtsLaunch, "ZiT_isFirtsLaunch", true);
 				if (!_isFirtsLaunch)
-					this.ObjectsDatabase.ExposeData();
+					ObjectsDatabase.ExposeData();
 			}
 #if DEBUG
             Log.Message("Exposing finished!");

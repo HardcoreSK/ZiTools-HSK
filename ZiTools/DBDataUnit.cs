@@ -14,8 +14,8 @@ namespace ZiTools
 
 		public DBUnit(string label)
 		{
-			this._label = label;
-			this.CleanData();
+			_label = label;
+			CleanData();
 		}
 
 		public DBUnit() : this(string.Empty) { }
@@ -78,7 +78,7 @@ namespace ZiTools
 
 		public void ExposeData()
 		{
-			Scribe_Values.Look(ref this._label, "ZiT_Unit.Label");
+			Scribe_Values.Look(ref _label, "ZiT_Unit.Label");
 		}
 	}
 }
