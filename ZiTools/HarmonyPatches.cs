@@ -14,12 +14,10 @@ namespace ZiTools
             if (Current.ProgramState != ProgramState.Playing)
                 return;
 
-            if (Find.WindowStack.IsOpen<ObjectSeeker_Window>())
+            if (Find.WindowStack.TryGetWindow<ObjectSeeker_Window>(out var w))
             {
-                if (Find.WindowStack.TryGetWindow<ObjectSeeker_Window>(out var w))
-                {
+                if (w.IsOpen)
                     w.ODB.Update();
-                }
             }
         }
     }
