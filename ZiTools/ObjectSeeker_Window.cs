@@ -9,7 +9,7 @@ namespace ZiTools
 {
     public class ObjectSeeker_Window : Window
     {
-        public const string SearchTextField = "ZiToolsSearchTextField";
+        public const string SearchTextField = "ZiT_SearchTextField";
 
         private bool _textBoxFocused = false;
         private Vector2 _scrollPosition = new Vector2();
