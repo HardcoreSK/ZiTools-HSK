@@ -185,7 +185,7 @@ namespace ZiTools
 
             if (lineNum % 2 == 0)
             {
-                Widgets.DrawHighlight(inRect);
+                Widgets.DrawLightHighlight(inRect);
             }
 
             Widgets.Label(rectLabel.LeftPartPixels(rectLabel.width), label);
