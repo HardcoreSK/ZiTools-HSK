@@ -56,7 +56,7 @@ namespace ZiTools
         {
             var cm = new CodeMatcher(instructions);
 
-            // Find a skip label where MapSearch button or OpenMapSearch key pressed if statement ends
+            // Find a skip label inside OpenMapSearch if statement
             cm.End();
             cm.MatchEndBackwards(
                 new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(KeyBindingDefOf), nameof(KeyBindingDefOf.OpenMapSearch))),
