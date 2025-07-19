@@ -25,7 +25,9 @@ namespace ZiTools
         Dictionary<CategoryOfObjects, Texture2D> TexturesOfCategoriesDict;
 
         Dictionary<CategoryOfObjects, List<DBUnit>> CategoriesDict = new Dictionary<CategoryOfObjects, List<DBUnit>> //Category - units
-			{ { CategoryOfObjects.Favorites, new List<DBUnit>() } };
+		{
+            { CategoryOfObjects.Favorites, new List<DBUnit>() }
+        };
 
         Dictionary<string, DBUnit> unitsDict = new Dictionary<string, DBUnit>(); // defName - unit;
 
@@ -122,41 +124,25 @@ namespace ZiTools
                 { CategoryOfObjects.Others, new List<DBUnit>() }
             };
 
-            foreach (IntVec3 location in _mapInProcess.AllCells)
+            foreach (IntVec3 location in _mapInProcess.AllCells.Where(c => !c.Fogged(_mapInProcess)))
             {
-                if (_mapInProcess.fogGrid.IsFogged(location))
-                    continue;
                 FillNewDataTerrain(location.GetTerrain(_mapInProcess), location);
-                foreach (Thing currentThing in _mapInProcess.thingGrid.ThingsAt(location))
+
+                var things = _mapInProcess.thingGrid.ThingsAt(location)
+                    .Select(t => t.GetInnerIfMinified())
+                    .Where(t => !(t is Mote) && t.def.drawerType != DrawerType.None);
+                foreach (Thing thingToLoad in things)
                 {
-                    if (currentThing is Mote)
-                        continue;
-                    Thing thingToLoad;
-                    bool isMinified;
-                    if (currentThing is MinifiedThing)
-                    {
-                        thingToLoad = ((MinifiedThing) currentThing).InnerThing;
-                        isMinified = true;
-                    }
-                    else
-                    {
-                        thingToLoad = currentThing;
-                        isMinified = false;
-                    }
-                    if (currentThing.def.drawerType == DrawerType.None)
-                    {
-                        continue;
-                    }
-                    if (FillNewData<Building>(thingToLoad, CategoryOfObjects.Buildings, location, isMinified))
+                    if (FillNewData<Building>(thingToLoad, CategoryOfObjects.Buildings, location, false))
                         continue;
 
-                    if (FillNewData<Plant>(thingToLoad, CategoryOfObjects.Plants, location, isMinified))
+                    if (FillNewData<Plant>(thingToLoad, CategoryOfObjects.Plants, location, false))
                         continue;
 
-                    if (FillNewData<Pawn>(thingToLoad, CategoryOfObjects.Pawns, location, isMinified))
+                    if (FillNewData<Pawn>(thingToLoad, CategoryOfObjects.Pawns, location, false))
                         continue;
 
-                    if (FillNewData<Corpse>(thingToLoad, CategoryOfObjects.Corpses, location, isMinified))
+                    if (FillNewData<Corpse>(thingToLoad, CategoryOfObjects.Corpses, location, false))
                     {
                         CompRottable comp = ((Corpse) thingToLoad).GetComp<CompRottable>();
                         int currentTicksRemain = comp == null ? 0 : Mathf.RoundToInt(comp.PropsRot.TicksToRotStart - comp.RotProgress);
@@ -164,7 +150,7 @@ namespace ZiTools
                         continue;
                     }
 
-                    FillNewData<Thing>(thingToLoad, CategoryOfObjects.Others, location, isMinified);
+                    FillNewData<Thing>(thingToLoad, CategoryOfObjects.Others, location, false);
                 }
             }
 
@@ -178,15 +164,20 @@ namespace ZiTools
             // Sorting
             foreach (var c in CategoriesDict.Keys)
             {
-                CategoriesDict[c].Sort((u1, u2) => string.Compare(u1.Label, u2.Label));
+                if (c != CategoryOfObjects.Corpses)
+                    CategoriesDict[c].Sort((u1, u2) => string.Compare(u1.Label, u2.Label));
+                else
+                    CategoriesDict[c].Sort((u1, u2) => u1.CorpseTime.CompareTo(u2.CorpseTime));
             }
-            CategoriesDict[CategoryOfObjects.Corpses].Sort((u1, u2) => u1.CorpseTime.CompareTo(u2.CorpseTime));
 
             // Filling parametres
-            foreach (var unit in CategoriesDict[CategoryOfObjects.All])
-                unit.SetPatameter(CategoryOfObjects.All);
-            foreach (var unit in CategoriesDict[CategoryOfObjects.Corpses])
-                unit.SetPatameter(CategoryOfObjects.Corpses);
+            foreach (var (key, units) in CategoriesDict)
+            {
+                foreach (var unit in units)
+                {
+                    unit.SetPatameter(key);
+                }
+            }
 
             // UnitToSeek checking
             if (UnitToSeek != null && !CategoriesDict[CategoryOfObjects.All].Contains(UnitToSeek))
@@ -212,12 +203,8 @@ namespace ZiTools
                 if (isNewUnit)
                 {
                     unitsDict[defName].Icon = new ThingIconData(thing);
-                    unitsDict[defName].Area = thing.def.size.Area;
                 }
-                if (isMinified)
-                    unitsDict[defName].IncreaseCountOfMinified();
-                if (thing.stackCount > 1)
-                    unitsDict[defName].StackCount += thing.stackCount - 1;
+                unitsDict[defName].AddThing(thing);
                 return true;
             }
             else
