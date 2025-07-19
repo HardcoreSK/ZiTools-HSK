@@ -165,6 +165,22 @@ namespace ZiTools
             Widgets.EndScrollView();
         }
 
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            
+            if (!ZiToolsMod.Settings.showArrowsToSelectedObject)
+                return;
+            
+            if (ODB.Positions != null && ODB.Positions.Count <= ZiToolsMod.Settings.maxArrowsInScreen)
+            {
+                foreach (var position in ODB.Positions)
+                {
+                    GenDraw.DrawArrowPointingAt(position.ToVector3Shifted(), ZiToolsMod.Settings.arrowsOffscreenOnly);
+                }
+            }
+        }
+
         public override void Notify_ClickOutsideWindow()
         {
             base.Notify_ClickOutsideWindow();
