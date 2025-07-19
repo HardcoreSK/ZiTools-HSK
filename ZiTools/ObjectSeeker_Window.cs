@@ -28,6 +28,11 @@ namespace ZiTools
             }
         }
 
+        public static void DrawWindow()
+        {
+            Find.WindowStack.Add(new ObjectSeeker_Window());
+        }
+
         public ObjectSeeker_Window() : base()
         {
             doCloseX = true;
@@ -38,9 +43,9 @@ namespace ZiTools
             _headerHeight = Text.CalcSize("Header").y;
         }
 
-        public static void DrawWindow()
+        protected override void SetInitialSizeAndPosition()
         {
-            Find.WindowStack.Add(new ObjectSeeker_Window());
+            windowRect = new Rect(UI.screenWidth - InitialSize.x, UI.screenHeight - InitialSize.y - 150f, InitialSize.x, InitialSize.y);
         }
 
         public override void PreOpen()
@@ -121,7 +126,7 @@ namespace ZiTools
             var headerRect = new Rect(mainRect) { height = _headerHeight };
 
             Widgets.Label(headerRect.LeftPartPixels(Text.CalcSize(headerItemName).x), headerItemName);
-            Widgets.Label(headerRect.RightPartPixels(Text.CalcSize(headerItemCount).x + 8f /* add scroll width */), headerItemCount);
+            Widgets.Label(headerRect.RightPartPixels(Text.CalcSize(headerItemCount).x + 16f /* scroll width */), headerItemCount);
 
             // Draw body
             var bodyRect = new Rect(mainRect) { yMin = headerRect.yMax };
@@ -130,15 +135,13 @@ namespace ZiTools
             Widgets.BeginScrollView(bodyRect, ref _scrollPosition, scrollRect, true);
             GUI.BeginGroup(scrollRect);
 
-            DBUnit favChange = null;
-
             var lineNum = 1;
             var lineRect = new Rect(scrollRect) { height = lineHeight };
             foreach (var unit in units)
             {
                 try
                 {
-                    DrawObjectsList(lineRect, unit, lineNum, ref favChange);
+                    DrawObjectsList(lineRect, unit, lineNum);
                 }
                 catch (Exception ex)
                 {
@@ -147,14 +150,7 @@ namespace ZiTools
                 lineRect.y += lineHeight;
                 lineNum++;
             }
-            List<DBUnit> favList = ODB.UnitsInFavourites;
-            if (favChange != null)
-            {
-                if (!favList.Contains(favChange))
-                    favList.Add(favChange);
-                else
-                    favList.Remove(favChange);
-            }
+
             GUI.EndGroup();
             Widgets.EndScrollView();
         }
@@ -165,12 +161,15 @@ namespace ZiTools
             ODB.Clear();
         }
 
-        protected override void SetInitialSizeAndPosition()
+        public void ToggleFavourite(DBUnit unit)
         {
-            windowRect = new Rect(UI.screenWidth - InitialSize.x, UI.screenHeight - InitialSize.y - 150f, InitialSize.x, InitialSize.y);
+            if (!ODB.UnitsInFavourites.Contains(unit))
+                ODB.UnitsInFavourites.Add(unit);
+            else
+                ODB.UnitsInFavourites.Remove(unit);
         }
 
-        private void DrawObjectsList(Rect inRect, DBUnit unit, int lineNum, ref DBUnit favChange)
+        private void DrawObjectsList(Rect inRect, DBUnit unit, int lineNum)
         {
             string label = unit.Label;
             string param = unit.Parameter;
@@ -213,9 +212,10 @@ namespace ZiTools
 
             unit.Icon?.DrawIcon(rectImage);
 
-            if (Widgets.ButtonImage(rectFavButton.ScaledBy(0.85f), ODB.GetCategoryTexture(CategoryOfObjects.Favorites)))
+            var favColor = ODB.UnitsInFavourites.Contains(unit) ? Color.yellow : Color.white;
+            if (Widgets.ButtonImage(rectFavButton.ScaledBy(0.85f), ODB.GetCategoryTexture(CategoryOfObjects.Favorites), favColor))
             {
-                favChange = unit;
+                ToggleFavourite(unit);
                 SoundDefOf.Tick_Tiny.PlayOneShotOnCamera();
             }
         }
