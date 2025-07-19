@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using UnityEngine;
@@ -10,10 +9,12 @@ namespace ZiTools
 {
     public class ObjectSeeker_Window : Window
     {
+        public const string SearchTextField = "ZiToolsSearchTextField";
+
+        private bool _textBoxFocused = false;
         private Vector2 _scrollPosition = new Vector2();
         private string _text;
         private ObjectsDatabase _objectsDatabase;
-        private float _headerHeight;
 
         public override Vector2 InitialSize => new Vector2(400f, 280f);
 
@@ -40,7 +41,6 @@ namespace ZiTools
             draggable = true;
             preventCameraMotion = false;
             closeOnAccept = false;
-            _headerHeight = Text.CalcSize("Header").y;
         }
 
         protected override void SetInitialSizeAndPosition()
@@ -74,8 +74,15 @@ namespace ZiTools
             }
             TooltipHandler.TipRegion(updateButtonRect, "ZiT_UpdateButtonLabel".Translate());
             MouseoverSounds.DoRegion(updateButtonRect, SoundDefOf.Mouseover_Category);
-            _text = Widgets.TextField(textFieldRect, _text); //it's here for bigger font
+            GUI.SetNextControlName(SearchTextField);
+            _text = Widgets.TextField(textFieldRect, _text); // it's here for bigger font
             Text.Font = GameFont.Small;
+
+            if (!_textBoxFocused)
+            {
+                GUI.FocusControl(SearchTextField);
+                _textBoxFocused = true;
+            }
 
             float lineHeight = Text.LineHeight;
             Rect catButtRect = new Rect(buttonX, inRect.yMax - (buttonHeigth + 1f) * 4f, buttonWidth, buttonHeigth);
@@ -127,7 +134,7 @@ namespace ZiTools
             // Draw header
             var headerItemName = "ZiT_NameLabel".Translate();
             var headerItemCount = ODB.SelectedCategory == CategoryOfObjects.Corpses ? "ZiT_TimeUntilRotted".Translate() : "ZiT_CellsCountLabel".Translate();
-            var headerRect = new Rect(mainRect) { height = _headerHeight };
+            var headerRect = new Rect(mainRect) { height = Text.LineHeight };
 
             Widgets.Label(headerRect.LeftPartPixels(Text.CalcSize(headerItemName).x), headerItemName);
             Widgets.Label(headerRect.RightPartPixels(Text.CalcSize(headerItemCount).x + 16f /* scroll width */), headerItemCount);
@@ -156,6 +163,15 @@ namespace ZiTools
 
             GUI.EndGroup();
             Widgets.EndScrollView();
+        }
+
+        public override void Notify_ClickOutsideWindow()
+        {
+            base.Notify_ClickOutsideWindow();
+            if (GUI.GetNameOfFocusedControl() == SearchTextField)
+            {
+                GUI.FocusControl(null);
+            }
         }
 
         public override void PreClose()
