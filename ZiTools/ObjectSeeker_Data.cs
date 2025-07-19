@@ -1,0 +1,286 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using RimWorld;
+using UnityEngine;
+using Verse;
+
+namespace ZiTools
+{
+    public partial class ObjectsDatabase : IExposable
+    {
+        public ObjectsDatabase()
+        {
+            _unitToSeek = null;
+            SelectedCategory = CategoryOfObjects.All;
+        }
+
+        DBUnit _unitToSeek;
+
+        Map _mapInProcess;
+
+        static Action UpdateAction = delegate { };
+
+        Dictionary<CategoryOfObjects, Texture2D> TexturesOfCategoriesDict;
+
+        Dictionary<CategoryOfObjects, List<DBUnit>> CategoriesDict = new Dictionary<CategoryOfObjects, List<DBUnit>> //Category - units
+		{
+            { CategoryOfObjects.Favorites, new List<DBUnit>() }
+        };
+
+        Dictionary<string, DBUnit> unitsDict = new Dictionary<string, DBUnit>(); // defName - unit;
+
+        public readonly Dictionary<CategoryOfObjects, string> NamesOfCategoriesDict = new Dictionary<CategoryOfObjects, string>
+        {
+            { CategoryOfObjects.Favorites, "ZiT_FavoritesCategoryLabel".Translate() },
+            { CategoryOfObjects.All, "ZiT_AllCategoryLabel".Translate() },
+            { CategoryOfObjects.Buildings, "ZiT_BuildingCategoryLabel".Translate() },
+            { CategoryOfObjects.Terrains, "ZiT_TerrainCategoryLabel".Translate() },
+            { CategoryOfObjects.Plants, "ZiT_PlantCategoryLabel".Translate() },
+            { CategoryOfObjects.Pawns, "ZiT_PawnsCategoryLabel".Translate() },
+            { CategoryOfObjects.Corpses, "ZiT_СorpsesCategoryLabel".Translate() },
+            { CategoryOfObjects.Others, "ZiT_OtherCategoryLabel".Translate() }
+        };
+
+        public List<IntVec3> Positions
+        {
+            get
+            {
+                if (_unitToSeek != null)
+                    return _unitToSeek.Locations;
+                else
+                    return null;
+            }
+        }
+
+        public DBUnit UnitToSeek
+        {
+            get => _unitToSeek;
+            set => _unitToSeek = CategoriesDict[CategoryOfObjects.All].Contains(value) ? value : null;
+        }
+
+        public CategoryOfObjects SelectedCategory { get; set; }
+        public string SelectedCategoryName => NamesOfCategoriesDict[SelectedCategory];
+
+        public List<DBUnit> UnitsInFavourites => CategoriesDict[CategoryOfObjects.Favorites]; // TODO: add labels
+
+        public CategoryOfObjects GetCategoryViaInt(int i) => (CategoryOfObjects) Enum.Parse(typeof(CategoryOfObjects), i.ToString());
+
+        public Texture2D GetCategoryTexture(CategoryOfObjects category) => TexturesOfCategoriesDict[category];
+
+        public IEnumerable<DBUnit> GetUnitsByWord(string word)
+        {
+            if (!string.IsNullOrEmpty(word))
+                return CategoriesDict[SelectedCategory].Where(u => u.Label.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+            return CategoriesDict[SelectedCategory];
+        }
+
+        public bool IsSelectedCategoryHaveObjects() => CategoriesDict[SelectedCategory].Count > 0;
+
+        public void Update()
+        {
+            FindAll();
+            MapMarksManager.SetMarks(MapMarksManager.ObjectSeeker_MarkDef, Positions);
+            UpdateAction();
+        }
+
+        public void Clear()
+        {
+            UnitToSeek = null;
+            MapMarksManager.RemoveMarks(MapMarksManager.ObjectSeeker_MarkDef);
+            UpdateAction();
+        }
+
+        public static void DoUpdateAction() => UpdateAction();
+
+        public static void SetUpdateAction(Action action) => UpdateAction += action;
+
+        public static void ClearUpdateAction() => UpdateAction = delegate { };
+
+        public void FindAll()
+        {
+            if (TexturesOfCategoriesDict == null) // NOTE: works only after a loading game
+                InitializeTextures();
+#if DEBUG
+            Stopwatch sw = Stopwatch.StartNew();
+#endif
+            _mapInProcess = Find.CurrentMap;
+
+            foreach (var u in unitsDict.Values)
+                u.CleanData();
+
+            List<DBUnit> favourites = CategoriesDict[CategoryOfObjects.Favorites];
+            CategoriesDict = new Dictionary<CategoryOfObjects, List<DBUnit>>
+            {
+                { CategoryOfObjects.Favorites, favourites },
+                { CategoryOfObjects.All, new List<DBUnit>() },
+                { CategoryOfObjects.Buildings, new List<DBUnit>() },
+                { CategoryOfObjects.Terrains, new List<DBUnit>() },
+                { CategoryOfObjects.Plants, new List<DBUnit>() },
+                { CategoryOfObjects.Pawns, new List<DBUnit>() },
+                { CategoryOfObjects.Corpses, new List<DBUnit>() },
+                { CategoryOfObjects.Others, new List<DBUnit>() }
+            };
+
+            foreach (IntVec3 location in _mapInProcess.AllCells.Where(c => !c.Fogged(_mapInProcess)))
+            {
+                FillNewDataTerrain(location.GetTerrain(_mapInProcess), location);
+
+                var things = _mapInProcess.thingGrid.ThingsAt(location)
+                    .Select(t => t.GetInnerIfMinified())
+                    .Where(t => !(t is Mote) && t.def.drawerType != DrawerType.None);
+                foreach (Thing thingToLoad in things)
+                {
+                    if (FillNewData<Building>(thingToLoad, CategoryOfObjects.Buildings, location, false))
+                        continue;
+
+                    if (FillNewData<Plant>(thingToLoad, CategoryOfObjects.Plants, location, false))
+                        continue;
+
+                    if (FillNewData<Pawn>(thingToLoad, CategoryOfObjects.Pawns, location, false))
+                        continue;
+
+                    if (FillNewData<Corpse>(thingToLoad, CategoryOfObjects.Corpses, location, false))
+                    {
+                        CompRottable comp = ((Corpse) thingToLoad).GetComp<CompRottable>();
+                        int currentTicksRemain = comp == null ? 0 : Mathf.RoundToInt(comp.PropsRot.TicksToRotStart - comp.RotProgress);
+                        unitsDict[thingToLoad.def.defName].CheсkAndSetCorpseTime(currentTicksRemain);
+                        continue;
+                    }
+
+                    FillNewData<Thing>(thingToLoad, CategoryOfObjects.Others, location, false);
+                }
+            }
+
+            // Filling All category
+            var AllObjects = from k in CategoriesDict.Keys where k != CategoryOfObjects.All && k != CategoryOfObjects.Favorites select CategoriesDict[k];
+            foreach (var list in AllObjects)
+            {
+                CategoriesDict[CategoryOfObjects.All].AddRange(list);
+            }
+
+            // Sorting
+            foreach (var c in CategoriesDict.Keys)
+            {
+                if (c != CategoryOfObjects.Corpses)
+                    CategoriesDict[c].Sort((u1, u2) => string.Compare(u1.Label, u2.Label));
+                else
+                    CategoriesDict[c].Sort((u1, u2) => u1.CorpseTime.CompareTo(u2.CorpseTime));
+            }
+
+            // Filling parametres
+            foreach (var (key, units) in CategoriesDict)
+            {
+                foreach (var unit in units)
+                {
+                    unit.SetPatameter(key);
+                }
+            }
+
+            // UnitToSeek checking
+            if (UnitToSeek != null && !CategoriesDict[CategoryOfObjects.All].Contains(UnitToSeek))
+                Clear();
+#if DEBUG
+            sw.Stop();
+            Log.Message($"Object Seeker has filled a data for {sw.ElapsedMilliseconds} ms");
+#endif
+        }
+
+        bool FillNewData<T>(Thing thing, CategoryOfObjects category, IntVec3 location, bool isMinified)
+        {
+            if (thing is T)
+            {
+                string defName = thing.def.defName;
+                string label = thing.def.label;
+                if (thing.Stuff != null)
+                {
+                    defName += $" ({thing.Stuff.defName})";
+                    label += $" ({thing.Stuff.LabelAsStuff})";
+                }
+                bool isNewUnit = AddUnit(defName, label, category, location);
+                if (isNewUnit)
+                {
+                    unitsDict[defName].Icon = new ThingIconData(thing);
+                }
+                unitsDict[defName].AddThing(thing);
+                return true;
+            }
+            else
+                return false;
+        }
+
+        void FillNewDataTerrain(TerrainDef terrDef, IntVec3 location)
+        {
+            bool isNewUnit = AddUnit(terrDef.defName, terrDef.label, CategoryOfObjects.Terrains, location);
+            if (isNewUnit)
+                unitsDict[terrDef.defName].Icon = new TerrainIconData(terrDef);
+        }
+
+        bool AddUnit(string defName, string label, CategoryOfObjects category, IntVec3 location)
+        {
+            DBUnit unit;
+            bool isNewUnit;
+            if (!unitsDict.ContainsKey(defName))
+            {
+                unit = new DBUnit(label);
+                unitsDict.Add(defName, unit);
+                CategoriesDict[category].Add(unit);
+                isNewUnit = true;
+            }
+            else
+            {
+                unit = unitsDict[defName];
+                if (!CategoriesDict[category].Contains(unit))
+                    CategoriesDict[category].Add(unit);
+                if (unit.Icon == null)
+                    isNewUnit = true;
+                else
+                    isNewUnit = false;
+            }
+            unit.Locations.Add(location);
+            return isNewUnit;
+        }
+
+        void InitializeTextures()
+        {
+            TexturesOfCategoriesDict = new Dictionary<CategoryOfObjects, Texture2D>
+            {
+                { CategoryOfObjects.Favorites, Textures.IconFavorites },
+                { CategoryOfObjects.All, Textures.IconAll },
+                { CategoryOfObjects.Buildings, Textures.IconBuildings },
+                { CategoryOfObjects.Terrains, Textures.IconTerrains },
+                { CategoryOfObjects.Plants, Textures.IconPlants },
+                { CategoryOfObjects.Pawns, Textures.IconPawns },
+                { CategoryOfObjects.Corpses, Textures.IconCorpses },
+                { CategoryOfObjects.Others, Textures.IconOthers }
+            };
+        }
+
+        public void ExposeData()
+        {
+            Dictionary<string, DBUnit> fav = new Dictionary<string, DBUnit>(unitsDict);
+            fav.RemoveAll(uDict => !CategoriesDict[CategoryOfObjects.Favorites].Contains(uDict.Value));
+            Scribe_Collections.Look(ref fav, "ZiT_ObjectsDatabase.Favourites");
+            if (Scribe.mode == LoadSaveMode.LoadingVars && fav != null)
+            {
+                CategoriesDict[CategoryOfObjects.Favorites] = fav.Values.ToList();
+                foreach (var k in fav.Keys)
+                    unitsDict.Add(k, fav[k]);
+            }
+        }
+    }
+
+    public enum CategoryOfObjects
+    {
+        Favorites,
+        All,
+        Buildings,
+        Terrains,
+        Plants,
+        Pawns,
+        Corpses,
+        Others,
+    }
+}
