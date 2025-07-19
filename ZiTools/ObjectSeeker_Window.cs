@@ -51,7 +51,7 @@ namespace ZiTools
 			Rect updateButtonRect = new Rect(textFieldRect.xMax + 2f, textFieldRect.y, textFieldH, textFieldH);
 
 			Widgets.Label(titleRect, "ZiT_ObjectsSeekerLabel".Translate());
-			if (Widgets.ButtonImageWithBG(updateButtonRect, ContentFinder<Texture2D>.Get("UI/Update Button", true)))
+			if (Widgets.ButtonImageWithBG(updateButtonRect, Textures.Refresh))
 			{
 				ODB.Update();
 				SoundDefOf.PageChange.PlayOneShotOnCamera();

@@ -25,7 +25,6 @@ namespace ZiTools
     [HarmonyPatch(typeof(PlaySettings), nameof(PlaySettings.DoPlaySettingsGlobalControls))]
     public static class Patch_DoPlaySettingsGlobalControls
     {
-        static Texture2D icon = ContentFinder<Texture2D>.Get("UI/Lupa(not Pupa)", true);
         static string tooltip = "ZiT_ObjectsSeekerLabel".Translate();
 
         public static void Postfix(WidgetRow row, bool worldView)
@@ -34,7 +33,7 @@ namespace ZiTools
                 return;
 
             bool isSelected = Find.WindowStack.IsOpen<ObjectSeeker_Window>();
-            row.ToggleableIcon(ref isSelected, icon, tooltip, SoundDefOf.Mouseover_ButtonToggle);
+            row.ToggleableIcon(ref isSelected, Textures.Search, tooltip, SoundDefOf.Mouseover_ButtonToggle);
             bool isSelected2 = Find.WindowStack.IsOpen<ObjectSeeker_Window>();
             if (isSelected != isSelected2)
             {

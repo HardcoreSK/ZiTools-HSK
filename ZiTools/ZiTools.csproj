@@ -7,12 +7,12 @@
     <Company>MaxZiCode</Company>
     <Product>ZiTools</Product>
     <Copyright>Copyright ©  2025</Copyright>
-    <AssemblyVersion>1.9.6.0</AssemblyVersion>
-    <FileVersion>1.9.6.0</FileVersion>
+    <AssemblyVersion>1.10.0.0</AssemblyVersion>
+    <FileVersion>1.10.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.4409" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
     <PackageReference Include="Lib.Harmony" Version="2.3.6" ExcludeAssets="runtime" />
   </ItemGroup>
 

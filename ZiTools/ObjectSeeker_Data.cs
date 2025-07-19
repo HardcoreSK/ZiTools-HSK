@@ -261,14 +261,14 @@ namespace ZiTools
 		{
 			TexturesOfCategoriesDict = new Dictionary<CategoryOfObjects, Texture2D>
 			{
-				{ CategoryOfObjects.Favorites,  ContentFinder<Texture2D>.Get("UI/Favourite Button", true) },
-				{ CategoryOfObjects.All,  ContentFinder<Texture2D>.Get("UI/All Button", true) },
-				{ CategoryOfObjects.Buildings,  ContentFinder<Texture2D>.Get("UI/Designators/Deconstruct", true) },
-				{ CategoryOfObjects.Terrains,  ContentFinder<Texture2D>.Get("UI/Designators/RemoveFloor", true) },
-				{ CategoryOfObjects.Plants,  DefDatabase<ThingDef>.GetNamed("Plant_TreeOak").uiIcon },
-				{ CategoryOfObjects.Pawns,  DefDatabase<ThingDef>.GetNamed("Muffalo").uiIcon },
-				{ CategoryOfObjects.Corpses,  ContentFinder<Texture2D>.Get("Things/Mote/ThoughtSymbol/Skull", true) },
-				{ CategoryOfObjects.Others,  DefDatabase<ThingDef>.GetNamed("ChunkSlagSteel").uiIcon }
+				{ CategoryOfObjects.Favorites, Textures.IconFavorites },
+				{ CategoryOfObjects.All,  Textures.IconAll },
+				{ CategoryOfObjects.Buildings,  Textures.IconBuildings },
+				{ CategoryOfObjects.Terrains,  Textures.IconTerrains },
+				{ CategoryOfObjects.Plants,  Textures.IconPlants },
+				{ CategoryOfObjects.Pawns,  Textures.IconPawns },
+				{ CategoryOfObjects.Corpses,  Textures.IconCorpses },
+				{ CategoryOfObjects.Others,  Textures.IconOthers }
 			};
 		}
 
