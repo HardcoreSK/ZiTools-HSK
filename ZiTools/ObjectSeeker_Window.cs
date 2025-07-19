@@ -57,6 +57,9 @@ namespace ZiTools
 
         public override void DoWindowContents(Rect inRect)
         {
+            var units = ODB.GetUnitsByWord(_text);
+            var unitsCount = units.Count();
+
             float textFieldH = 35f, buttonWidth = 50f, buttonHeigth = 50f, buttonX = inRect.xMax - 2f * (buttonWidth + 1f);
             Text.Font = GameFont.Medium;
             Rect titleRect = new Rect(inRect) { height = Text.LineHeight + 7f };
@@ -76,8 +79,9 @@ namespace ZiTools
 
             float lineHeight = Text.LineHeight;
             Rect catButtRect = new Rect(buttonX, inRect.yMax - (buttonHeigth + 1f) * 4f, buttonWidth, buttonHeigth);
-            Vector2 categorySize = Text.CalcSize(ODB.SelectedCategoryName);
-            Widgets.Label(new Rect(catButtRect.x + (inRect.xMax - catButtRect.x - categorySize.x) / 2f, (catButtRect.y - categorySize.y) / 2f, categorySize.x, categorySize.y), ODB.SelectedCategoryName);
+            var categoryName = $"{ODB.SelectedCategoryName} ({unitsCount})";
+            Vector2 categorySize = Text.CalcSize(categoryName);
+            Widgets.Label(new Rect(catButtRect.x + (inRect.xMax - catButtRect.x - categorySize.x) / 2f, (catButtRect.y - categorySize.y) / 2f, categorySize.x, categorySize.y), categoryName);
 
             for (int i = 0; i < 8; i++) //categories tab
             {
@@ -130,8 +134,7 @@ namespace ZiTools
 
             // Draw body
             var bodyRect = new Rect(mainRect) { yMin = headerRect.yMax };
-            var units = ODB.GetUnitsByWord(_text).ToList();
-            Rect scrollRect = new Rect(0.0f, 0.0f, bodyRect.width - 16f, (units.Count + 1) * lineHeight);
+            Rect scrollRect = new Rect(0.0f, 0.0f, bodyRect.width - 16f, unitsCount * lineHeight);
             Widgets.BeginScrollView(bodyRect, ref _scrollPosition, scrollRect, true);
             GUI.BeginGroup(scrollRect);
 
