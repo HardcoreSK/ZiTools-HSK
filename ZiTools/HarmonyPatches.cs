@@ -81,8 +81,7 @@ namespace ZiTools
                 new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(KeyBindingDefOf), nameof(KeyBindingDefOf.OpenMapSearch))),
                 new CodeMatch(OpCodes.Ldc_I4_0),
                 CodeMatch.Calls(() => default(KeyPrefsData).GetBoundKeyCode(default, default)),
-                CodeMatch.Calls(() => GenText.ToStringReadable(default)),
-                new CodeMatch(OpCodes.Stloc_S, (byte) 6) // stringReadable3
+                CodeMatch.Calls(() => GenText.ToStringReadable(default))
             );
             if (!cm.IsValid)
             {

@@ -25,7 +25,7 @@ namespace ZiTools
             IconAll = ContentFinder<Texture2D>.Get("UI/All Button");
             IconBuildings = ContentFinder<Texture2D>.Get("UI/Designators/Deconstruct");
             IconTerrains = ContentFinder<Texture2D>.Get("UI/Designators/RemoveFloor");
-            IconPlants = ContentFinder<Texture2D>.Get("Things/Plant/TreeOak/TreeOakA");
+            IconPlants = ContentFinder<Texture2D>.Get("Things/Plant/TreePine/TreePineA");
             IconPawns = ContentFinder<Texture2D>.Get("Things/Pawn/Animal/Muffalo/Muffalo_east");
             IconCorpses = ContentFinder<Texture2D>.Get("Things/Mote/ThoughtSymbol/Skull");
             IconOthers = ContentFinder<Texture2D>.Get("Things/Item/Chunk/ChunkSlag/MetalDebrisB");
