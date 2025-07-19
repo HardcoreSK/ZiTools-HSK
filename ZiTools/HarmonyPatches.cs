@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System.Collections.Generic;
+using System.Reflection.Emit;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -42,6 +44,69 @@ namespace ZiTools
                 else
                     Find.WindowStack.TryRemove(typeof(ObjectSeeker_Window), false);
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(PlaySettings), "DoMapControls")]
+    [HarmonyDebug]
+    public static class Patch_DoMapControls
+    {
+        // Remove old search icon from map controls
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            var cm = new CodeMatcher(instructions);
+
+            // Find a skip label where MapSearch button or OpenMapSearch key pressed if statement ends
+            cm.End();
+            cm.MatchEndBackwards(
+                new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(KeyBindingDefOf), nameof(KeyBindingDefOf.OpenMapSearch))),
+                new CodeMatch(OpCodes.Callvirt, AccessTools.PropertyGetter(typeof(KeyBindingDef), nameof(KeyBindingDef.JustPressed))),
+                new CodeMatch(OpCodes.Brfalse_S),
+                new CodeMatch(OpCodes.Call, AccessTools.PropertyGetter(typeof(Event), nameof(Event.current))),
+                new CodeMatch(OpCodes.Callvirt, AccessTools.PropertyGetter(typeof(Event), nameof(Event.type))),
+                new CodeMatch(OpCodes.Ldc_I4_4),
+                new CodeMatch(OpCodes.Bne_Un_S) // we want this
+            );
+            if (!cm.IsValid)
+            {
+                Log.Error("Object seeker: failed to patch PlaySettings.DoMapControls (1)");
+                return instructions;
+            }
+
+            var skipLabel = (Label) cm.Operand;
+
+            // Find start of if statement
+            cm.MatchStartBackwards(
+                new CodeMatch(OpCodes.Call, AccessTools.PropertyGetter(typeof(KeyPrefs), nameof(KeyPrefs.KeyPrefsData))),
+                new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(KeyBindingDefOf), nameof(KeyBindingDefOf.OpenMapSearch))),
+                new CodeMatch(OpCodes.Ldc_I4_0),
+                CodeMatch.Calls(() => default(KeyPrefsData).GetBoundKeyCode(default, default)),
+                CodeMatch.Calls(() => GenText.ToStringReadable(default)),
+                new CodeMatch(OpCodes.Stloc_S, (byte) 6) // stringReadable3
+            );
+            if (!cm.IsValid)
+            {
+                Log.Error("Object seeker: failed to patch PlaySettings.DoMapControls (2)");
+                return instructions;
+            }
+
+            var labels = cm.Labels.ListFullCopy();
+            cm.Labels.Clear();
+
+            // Insert check call
+            cm.Insert(
+                CodeInstruction.Call(() => DisplayOldSearchIcon()),
+                new CodeInstruction(OpCodes.Brfalse, skipLabel)
+            );
+
+            cm.Labels = labels;
+
+            return cm.InstructionEnumeration();
+        }
+
+        public static bool DisplayOldSearchIcon()
+        {
+            return !ZiToolsMod.Settings.hideOldMapSearchIcon;
         }
     }
 
