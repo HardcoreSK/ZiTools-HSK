@@ -30,17 +30,11 @@ namespace ZiTools
 				}
 				if (!pawn.RaceProps.Humanlike)
 				{
-					if (!pawn.Drawer.renderer.graphics.AllResolved)
-					{
-						pawn.Drawer.renderer.graphics.ResolveAllGraphics();
-					}
-					Material material = pawn.Drawer.renderer.graphics.nakedGraphic.MatAt(Rot4.East, null);
-					this.resolvedIcon = material.mainTexture;
-					this.drawColor = material.color;
+					this.resolvedIcon = PortraitsCache.Get(pawn, new Vector2(ThingIconSize, ThingIconSize), new Rot4());
 				}
 				else
 				{
-					this.resolvedIcon = PortraitsCache.Get(pawn, new Vector2(ThingIconSize, ThingIconSize), default);
+					this.resolvedIcon = PortraitsCache.Get(pawn, new Vector2(ThingIconSize, ThingIconSize), Rot4.East);
 				}
 			}
 			else

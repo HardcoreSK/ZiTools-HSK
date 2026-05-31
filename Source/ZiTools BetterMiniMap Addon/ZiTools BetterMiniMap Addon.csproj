@@ -31,32 +31,25 @@
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>C:\Users\Maxim\Desktop\RimWorld Modding\Assemblies\1.0\0Harmony.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>C:\Users\Maxim\Desktop\RimWorld Modding\Assemblies\1.0\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="BetterMiniMap">
-      <HintPath>C:\Users\Maxim\Desktop\RimWorld Modding\Assemblies\1.0\BetterMiniMap.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="UnityEngine">
-      <HintPath>C:\Users\Maxim\Desktop\RimWorld Modding\Assemblies\1.0\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="ZiTools">
       <HintPath>..\..\ZiTools\Assemblies\ZiTools.dll</HintPath>
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.3.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!--  <PackageReference Include="Zetrith.Prepatcher" Version="1.2.0" /> -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DesignationOverlay.cs" />

@@ -1,14 +1,14 @@
-﻿using System;
+﻿using HarmonyLib;
+using RimWorld;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
-
+using UnityEngine;
 using Verse;
 using Verse.Profile;
-using RimWorld;
-using HarmonyLib;
-using UnityEngine;
 
 namespace ZiTools
 {
@@ -47,7 +47,7 @@ namespace ZiTools
 			static Type objectSeeker_Window = typeof(ObjectSeeker_Window);
 			static void Postfix(WidgetRow row, bool worldView)
 			{
-				if (!worldView)
+				if (!ZiToolsMod.Settings.replaceVanillaSearch && !worldView)
 				{
 					bool isSelected = Find.WindowStack.IsOpen(objectSeeker_Window);
 					row.ToggleableIcon(ref isSelected, icon, tooltip, SoundDefOf.Mouseover_ButtonToggle);
@@ -69,6 +69,24 @@ namespace ZiTools
 			static void Postfix()
 			{
 				ObjectsDatabase.ClearUpdateAction();
+			}
+		}
+
+		[HarmonyPatch(typeof(WindowStack), nameof(WindowStack.Add))]
+		public static class Patch_WindowStack_Add
+		{
+			static bool Prefix(Window window)
+			{
+				if (!ZiToolsMod.Settings.replaceVanillaSearch)
+					return true;
+
+				if (window is Dialog_MapSearch)
+				{
+					ObjectSeeker_Window.DrawWindow();
+					return false;
+				}
+
+				return true;
 			}
 		}
 		#endregion Patches
