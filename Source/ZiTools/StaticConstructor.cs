@@ -39,6 +39,7 @@ namespace ZiTools
 			}
 		}
 
+		[StaticConstructorOnStartup]
 		[HarmonyPatch(typeof(PlaySettings), "DoPlaySettingsGlobalControls", MethodType.Normal)]
 		class Patch_DoPlaySettingsGlobalControls
 		{
